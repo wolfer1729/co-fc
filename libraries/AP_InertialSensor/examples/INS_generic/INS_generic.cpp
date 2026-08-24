@@ -83,6 +83,9 @@ void loop(void)
 
         if (user_input == 'd' || user_input == 'D') {
             display_offsets_and_scaling();
+            hal.console->printf("Number of detected accels : %u\n", ins.get_accel_count());
+    hal.console->printf("Number of detected gyros  : %u\n\n", ins.get_gyro_count());
+
         }
 
         if (user_input == 't' || user_input == 'T') {

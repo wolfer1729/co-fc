@@ -60,5 +60,15 @@ bool PixRacerLED::hw_set_rgb(uint8_t r, uint8_t g, uint8_t b)
     hal.gpio->write(AP_NOTIFY_GPIO_LED_RGB_BLUE_PIN, (b > 0)?HAL_GPIO_LED_ON:HAL_GPIO_LED_OFF);
     return true;
 }
-
+// #ifdef BOOTLOADER_DEBUG_PRINTS
+//             {
+//                 static uint32_t last_debug_print_ms;
+//                 static uint32_t debug_counter;
+//                 const uint32_t now = AP_HAL::millis();
+//                 if (now - last_debug_print_ms >= 1000U) {
+//                     last_debug_print_ms = now;
+//                     debug_counter++;
+//                     debug_printf_all("hello %lu\n", (unsigned long)debug_counter);
+//                 }
+//             }
 #endif  // AP_NOTIFY_GPIO_LED_RGB_ENABLED

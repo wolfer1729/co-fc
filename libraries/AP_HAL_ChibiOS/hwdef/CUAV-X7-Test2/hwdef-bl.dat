@@ -1,0 +1,79 @@
+# hw definition file for processing by chibios_hwdef.py
+# for TARA-X7 board (Digital Shark Technology "Tara UAV")
+
+# MCU class and specific type
+# actual silicon is STM32H753XIH6; see hwdef.dat for why STM32H743xx is used here.
+MCU STM32H7xx STM32H743xx
+
+# crystal frequency
+# NOTE: earlier extraction/schematic silkscreen read this as 16MHz, but the
+# actual populated crystal is confirmed 24MHz -- the wrong 16MHz assumption
+# caused invalid PLL math at the "400MHz" SYSCLK switchover (a genuine CPU
+# lockup, not a power-margin issue). Full speed is fine with the correct value.
+OSCILLATOR_HZ 24000000
+
+# board ID for firmware load (placeholder private/local ID -- see hwdef.dat)
+APJ_BOARD_ID AP_HW_CUAV_X7_PRO              
+
+FLASH_SIZE_KB 2048
+
+# bootloader is installed at zero offset
+FLASH_RESERVE_START_KB 0
+
+# the location where the bootloader will put the firmware
+# the H743/H753 has 128k sectors
+FLASH_BOOTLOADER_LOAD_KB 128
+
+# ChibiOS system timer
+STM32_ST_USE_TIMER 2
+
+PI5 LED_RED OUTPUT HIGH # red
+PI7 LED_ACTIVITY OUTPUT HIGH # blue
+PI6 LED_BOOTLOADER OUTPUT HIGH # green
+
+define HAL_LED_ON 1
+
+# order of UARTs (and USB)
+# TEMP bring-up: added USART2(TELEM1)/USART6(TELEM2) so the bootloader's
+# BOOTLOADER_DEBUG_PRINTS hello-beacon (below) also broadcasts on them.
+SERIAL_ORDER OTG1 UART7 USART2 USART6
+
+# UART7 is debug
+PF6 UART7_RX UART7 NODMA
+PF7 UART7_TX UART7 NODMA
+
+# USART2 is TELEM1
+PD6 USART2_RX USART2
+PD5 USART2_TX USART2
+
+# USART6 is TELEM2
+PC7 USART6_RX USART6
+PC6 USART6_TX USART6
+
+PA11 OTG_FS_DM OTG1
+PA12 OTG_FS_DP OTG1
+
+
+PA13 JTMS-SWDIO SWD
+PA14 JTCK-SWCLK SWD
+
+define BOOTLOADER_DEBUG SD7
+
+# TEMP bring-up: broadcast a 'hello N' beacon once/sec on every configured
+# UART (see bl_protocol.cpp) so UART hardware can be tested independent of
+# any application firmware. Remove once bring-up is done.
+# define BOOTLOADER_DEBUG_PRINTS 1
+
+# define HAL_GPIO_USB_SWITCH PH15
+PH15 USB_SWITCH OUTPUT HIGH
+
+# Add CS pins to ensure they are high in bootloader
+PF10 ADIS16470_CS CS
+PG6  ICM42688_CS CS SPEED_VERYLOW
+PF3  BMI088_A_CS CS
+PF4  BMI088_G_CS CS
+PF5  FRAM_CS CS SPEED_VERYLOW
+PG10 MS5611_CS CS
+PI4  EXT1_CS1 CS
+PI10 EXT1_CS2 CS
+PI13 EXT1_CS3 CS

@@ -16,6 +16,7 @@ import re
 import pickle
 import struct
 import base64
+import hashlib
 import subprocess
 
 _dynamic_env_data = {}
@@ -292,13 +293,14 @@ class set_app_descriptor(Task.Task):
         sys.path.append(upload_tools)
         from uploader import crc32
         if self.generator.bld.env.AP_SIGNED_FIRMWARE:
-            desc_len = 92
+            desc_len = 124
         else:
-            desc_len = 16
+            desc_len = 48
         img1 = bytearray(img[:offset])
         img2 = bytearray(img[offset+desc_len:])
         crc1 = to_unsigned(crc32(img1))
         crc2 = to_unsigned(crc32(img2))
+        image_sha256 = hashlib.sha256(img1 + img2).digest()
         githash = to_unsigned(int('0x' + os.environ.get('GIT_VERSION', self.generator.bld.git_head_hash(short=True)),16))
         if self.generator.bld.env.AP_SIGNED_FIRMWARE:
             sig = bytearray([0 for i in range(76)])
@@ -309,9 +311,9 @@ class set_app_descriptor(Task.Task):
                     sig = sig_signed
                 else:
                     self.generator.bld.fatal("Signing failed")
-            desc = struct.pack('<IIII76s', crc1, crc2, len(img), githash, sig)
+            desc = struct.pack('<IIII76s32s', crc1, crc2, len(img), githash, sig, image_sha256)
         else:
-            desc = struct.pack('<IIII', crc1, crc2, len(img), githash)
+            desc = struct.pack('<IIII32s', crc1, crc2, len(img), githash, image_sha256)
         img = img[:offset] + desc + img[offset+desc_len:]
         Logs.info("Applying APP_DESCRIPTOR %08x%08x" % (crc1, crc2))
         open(bin_file, 'wb').write(img)

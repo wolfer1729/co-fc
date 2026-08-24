@@ -3,6 +3,7 @@
  */
 
 #include "network.h"
+#include "bootloader_firmware_check.h"
 
 #if AP_BOOTLOADER_NETWORK_ENABLED
 
@@ -463,14 +464,20 @@ void BL_Network::handle_post(SocketAPM *sock, uint32_t content_length)
     }
     flash_write_flush();
     flash_set_keep_unlocked(false);
-    const auto ok = check_good_firmware();
+#if AP_CHECK_FIRMWARE_ENABLED
+    const auto ok = bootloader_check_firmware();
     if (ok == check_fw_result_t::CHECK_FW_OK) {
+#else
+    {
+#endif
         need_launch = true;
         status_printf("Flash done: OK");
         const char *str = "<html><head><meta http-equiv=\"refresh\" content=\"4; url=/\"></head><body>Flash OK, booting</body></html>";
         sock->send(str, strlen(str));
+#if AP_CHECK_FIRMWARE_ENABLED
     } else {
         status_printf("Flash done: ERR:%u", unsigned(ok));
+#endif
     }
 }
 
@@ -654,4 +661,3 @@ void BL_Network::status_printf(const char *fmt, ...)
 }
 
 #endif // AP_BOOTLOADER_NETWORK_ENABLED
-

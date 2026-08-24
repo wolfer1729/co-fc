@@ -433,7 +433,7 @@ def ap_stlib(bld, **kw):
     if 'ap_vehicle' not in kw:
         bld.fatal('Missing ap_vehicle for ap_stlib')
     if 'ap_libraries' not in kw:
-        bld.fatal('Missing ap_libraries for ap_stlib')
+        bld.fatal('Missing ap_libraries for ap_libraries')
 
     kw['ap_libraries'] = unique_list(kw['ap_libraries'] + bld.env.AP_LIBRARIES)
     for l in kw['ap_libraries']:
@@ -441,6 +441,13 @@ def ap_stlib(bld, **kw):
 
     if 'dynamic_source' not in kw:
         kw['dynamic_source'] = 'modules/DroneCAN/libcanard/dsdlc_generated/src/**.c'
+
+    if 'modules/DroneCAN/libcanard/dsdlc_generated/src/**.c' in kw['dynamic_source']:
+        kw.setdefault('includes', [])
+        kw['includes'] += [
+            bld.bldnode.make_node('modules/DroneCAN/libcanard/dsdlc_generated/include').abspath(),
+            bld.srcnode.find_dir('modules/DroneCAN/libcanard/').abspath(),
+        ]
 
     kw['features'] = kw.get('features', []) + ['cxx', 'cxxstlib']
     kw['target'] = kw['name']

@@ -1,0 +1,15 @@
+include ../CUAV-X7/hwdef-bl.dat
+
+define BOOTLOADER_DEBUG_PRINTS 1
+
+# also bring up Telem1/Telem2 in the bootloader so debug prints can
+# go out those ports too, not just USB and the UART7 debug console
+SERIAL_ORDER OTG1 USART2 USART6 UART7
+
+# USART2 is telem1
+PD6 USART2_RX USART2
+PD5 USART2_TX USART2
+
+# USART6 is telem2
+PG9 USART6_RX USART6
+PG14 USART6_TX USART6

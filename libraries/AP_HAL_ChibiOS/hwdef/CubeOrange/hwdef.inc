@@ -298,7 +298,7 @@ ROMFS io_firmware.bin Tools/IO_Firmware/iofirmware_cube_highpolh.bin
 
 # enable support for dshot on iomcu
 ROMFS io_firmware_dshot.bin Tools/IO_Firmware/iofirmware_cube_dshot_highpolh.bin
-define HAL_WITH_IO_MCU_DSHOT 1
+define HAL_WITH_IO_MCU_DSHOT 1TG,
 
 define AP_IOMCU_PROFILED_SUPPORT_ENABLED 1
 

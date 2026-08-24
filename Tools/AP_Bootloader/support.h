@@ -66,6 +66,10 @@ void check_ecc_errors(void);
 extern "C" {
 void uprintf(const char *fmt, ...) FMT_PRINTF(1,2);
 }
+void usb_printf(const char *fmt, ...) FMT_PRINTF(1,2);
+#if defined(BOOTLOADER_DEV_LIST) && defined(BOOTLOADER_DEBUG_PRINTS)
+void debug_printf_all(const char *fmt, ...) FMT_PRINTF(1,2);
+#endif
 
 // generate a LED sequence forever
 void led_pulses(uint8_t npulses);

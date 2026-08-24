@@ -27,6 +27,7 @@ const app_descriptor_t app_descriptor = {
     .signature_length = 0,
     .signature = {},
 #endif
+    .image_sha256 = {},
     .version_major = APP_FW_MAJOR,
     .version_minor = APP_FW_MINOR,
     .board_id = APJ_BOARD_ID,

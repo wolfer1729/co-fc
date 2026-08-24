@@ -4,6 +4,7 @@
 #include "AP_CheckFirmware.h"
 #include <AP_HAL/HAL.h>
 #include <AP_Math/crc.h>
+#include <string.h>
 
 #if AP_CHECK_FIRMWARE_ENABLED
 
@@ -11,7 +12,6 @@
 
 #if AP_SIGNED_FIRMWARE
 #include "../../Tools/AP_Bootloader/support.h"
-#include <string.h>
 #include "monocypher.h"
 
 const struct ap_secure_data public_keys __attribute__((section(".apsec_data")));
@@ -116,7 +116,6 @@ static check_fw_result_t check_good_firmware_signed(void)
     if (crc1 != ad->image_crc1 || crc2 != ad->image_crc2) {
         return check_fw_result_t::FAIL_REASON_BAD_CRC;
     }
-
     check_fw_result_t ret = check_fw_result_t::CHECK_FW_OK;
 
 #if AP_SIGNED_FIRMWARE
@@ -168,7 +167,6 @@ static check_fw_result_t check_good_firmware_unsigned(void)
     if (crc1 != ad->image_crc1 || crc2 != ad->image_crc2) {
         return check_fw_result_t::FAIL_REASON_BAD_CRC;
     }
-
     return check_fw_result_t::CHECK_FW_OK;
 }
 

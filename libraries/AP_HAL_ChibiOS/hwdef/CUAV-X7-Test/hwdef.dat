@@ -1,0 +1,3 @@
+# CUAV-X7-Test - test/debug build of CUAV-X7, used for bootloader testing
+
+include ../CUAV-X7/hwdef.dat

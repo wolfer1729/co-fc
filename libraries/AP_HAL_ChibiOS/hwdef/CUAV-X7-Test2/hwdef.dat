@@ -1,0 +1,340 @@
+# hw definition file for processing by chibios_hwdef.py for TARA-X7
+# Digital Shark Technology "Tara UAV" flight controller (STM FCU card)
+#
+# Pin assignments in this file were extracted from the authoritative PCB netlist
+# (STM_FCU_CARD_V1_PCB Netlist Report.xlsx / STM_IMU_CARD_V1_PCB Netlist Report.xlsx),
+# not from visual schematic reading -- see Tara_FC_schematics/TARA-X7_netlist_pinmap.txt
+# for the full net-name -> GPIO cross reference this file was built from.
+
+# MCU class and specific type
+# NOTE: actual silicon is STM32H753XIH6 (per schematic). ArduPilot has no dedicated
+# STM32H753xx.py AF/ADC table; H753 is pin/AF/ADC identical to H743 for every peripheral
+# ArduPilot uses (H753 only adds crypto/hash blocks we don't touch), so STM32H743xx is used
+# here exactly as it is for other STM32H753-silicon boards.
+MCU STM32H7xx STM32H743xx
+
+# crystal frequency
+# NOTE: earlier extraction/schematic silkscreen read this as 16MHz, but the
+# actual populated crystal is confirmed 24MHz -- the wrong 16MHz assumption
+# caused invalid PLL math at the "400MHz" SYSCLK switchover (a genuine CPU
+# lockup, not a power-margin issue). Full speed is fine with the correct value.
+OSCILLATOR_HZ 24000000
+
+# board ID for firmware load
+# NOTE: placeholder private/local ID -- Tools/AP_Bootloader/board_types.txt has no reserved
+# block for Digital Shark Technology. Request an official ID from the ArduPilot dev team
+# before any upstream submission; fine for local builds/testing until then.
+APJ_BOARD_ID AP_HW_CUAV_X7_PRO
+
+FLASH_SIZE_KB 2048
+
+# with 2M flash we can afford to optimize for speed
+env OPTIMIZE -O2
+
+# ChibiOS system timer
+STM32_ST_USE_TIMER 2
+
+# bootloader takes first sector
+FLASH_RESERVE_START_KB 128
+
+# order of UARTs (and USB). USART2=TELEM1, USART6=TELEM2, USART1=GPS1, UART4=GPS2,
+# UART8=RC input (SBUS/DSM, hardware inversion), UART7=DEBUG. Confirmed via netlist:
+# level-shifter U7 ties USART1<->GPS1 and USART2<->TELEM1 1:1 by channel; U8 ties
+# UART4<->GPS2, UART7<->DEBUG, USART6<->TELEM2 1:1 by channel.
+SERIAL_ORDER OTG1 USART2 USART6 USART1 UART4 UART8 UART7 OTG2
+
+# these are the pins for USB
+PA11 OTG_FS_DM OTG1
+PA12 OTG_FS_DP OTG1
+
+# second USB (internal FS PHY on OTG_HS, matches CUAV-X7's OTG2 usage)
+PB14 OTG_HS_DM OTG2
+PB15 OTG_HS_DP OTG2
+
+# Port switching for USB HS and FS, high = USB_FS, low = USB_HS
+PH15 USB_HS_ENABLE OUTPUT HIGH
+define USB_HW_ENABLE_HS 0
+
+# these are the pins for SWD debugging with a STlinkv2 or black-magic probe
+PA13 JTMS-SWDIO SWD
+PA14 JTCK-SWCLK SWD
+
+# SPI1 - IMU board: ADIS16470 + ICM42688-P (shared bus, separate CS)
+PA5 SPI1_SCK SPI1
+PA6 SPI1_MISO SPI1
+PD7 SPI1_MOSI SPI1
+
+# SPI2 - FRAM
+PI1 SPI2_SCK SPI2
+PI2 SPI2_MISO SPI2
+PI3 SPI2_MOSI SPI2
+
+# SPI4 - IMU board: BMI088 + MS5611 (shared bus, separate CS)
+PE2 SPI4_SCK SPI4
+PE5 SPI4_MISO SPI4
+PE6 SPI4_MOSI SPI4
+
+# SPI5 - external1 (routed to 100P baseboard connector for expansion)
+PK0  SPI5_SCK SPI5
+PJ11 SPI5_MISO SPI5
+PJ10 SPI5_MOSI SPI5
+
+# NOTE: SPI6 (PB3 SCK, PB4 MISO, PG14 MOSI) is provisioned on the STM board schematic with
+# a spare "SPI6_CS2_MS5611" CS pin (PI8) for a second/board-mounted baro, mirroring CUAV-X7's
+# design -- but the IMU board netlist confirms only ONE MS5611 is actually populated (on SPI4).
+# SPI6 is left undefined here since nothing is wired to it on this hardware revision.
+
+# sensor CS pins (IMU board, via FFC ribbon)
+PF10 ADIS16470_CS CS
+PG6  ICM42688_CS CS SPEED_VERYLOW
+PF3  BMI088_A_CS CS
+PF4  BMI088_G_CS CS
+PG10 MS5611_CS CS
+PF5  FRAM_CS CS SPEED_VERYLOW
+
+# external CS pins, SPI5 connector (baseboard expansion port)
+PI4  EXT1_CS1 CS
+PI10 EXT1_CS2 CS
+PI13 EXT1_CS3 CS
+
+# I2C buses
+
+# I2C1 is on GPS1 port
+PB8 I2C1_SCL I2C1
+PB9 I2C1_SDA I2C1
+
+# I2C2 is on GPS2/UART4 port
+PF1 I2C2_SCL I2C2
+PF0 I2C2_SDA I2C2
+
+# I2C3 is external3 port (100P connector)
+PH7 I2C3_SCL I2C3
+PH8 I2C3_SDA I2C3
+
+# I2C4 is for the onboard BMM350 compass (IMU board)
+PF14 I2C4_SCL I2C4
+PF15 I2C4_SDA I2C4
+
+# order of I2C buses
+I2C_ORDER I2C3 I2C1 I2C2 I2C4
+
+define HAL_I2C_INTERNAL_MASK 1
+
+# enable pins
+PE3 VDD_3V3_SENSORS_EN OUTPUT LOW
+
+# start peripheral power on
+PD11 VDD_5V_HIPOWER_EN OUTPUT HIGH
+PG4  VDD_5V_PERIPH_EN OUTPUT HIGH
+
+PG5  VDD_5V_RC_EN OUTPUT HIGH
+PJ8  VDD_3V3_SD_CARD_EN OUTPUT HIGH
+
+# drdy pins (IMU board, via FFC ribbon)
+PE7  DRDY1_ADIS16470 INPUT GPIO(93)
+PJ0  DRDY5_ICM INPUT
+PC13 DRDY3_BMI088_GYRO1 INPUT
+PJ6  DRDY4_BMI088_ACC1 INPUT
+PJ7  DRDY6_BMI088_GYRO2 INPUT
+PI12 DRDY7_BMI088_ACC2 INPUT
+PE4  DRDY8_BMM350 INPUT
+
+# use GPIO(93) for data ready on ADIS16470
+define ADIS_DRDY_PIN 93
+
+# UARTs
+
+# USART2 is telem1
+PD6 USART2_RX USART2
+PD5 USART2_TX USART2
+PD3 USART2_CTS USART2
+PD4 USART2_RTS USART2
+
+# USART1 is GPS1
+PB7 USART1_RX USART1 NODMA
+PA9 USART1_TX USART1 NODMA
+
+# UART4 is GPS2
+PD0 UART4_RX UART4 NODMA
+PD1 UART4_TX UART4 NODMA
+
+# USART6 is telem2
+PC7 USART6_RX USART6
+PC6 USART6_TX USART6
+PG15 USART6_CTS USART6
+PG8 USART6_RTS USART6
+
+# UART7 is debug
+PF6 UART7_RX UART7 NODMA
+PF7 UART7_TX UART7 NODMA
+
+# SBUS, DSM port
+PE0 UART8_RX UART8
+PE1 UART8_TX UART8
+
+# PWM AUX channels -- identical timer/pin assignment to CUAV-X7 (confirmed via netlist)
+PH10 TIM5_CH1 TIM5 PWM(1) GPIO(50)
+PH11 TIM5_CH2 TIM5 PWM(2) GPIO(51)
+PH12 TIM5_CH3 TIM5 PWM(3) GPIO(52)
+PI0  TIM5_CH4 TIM5 PWM(4) GPIO(53)
+PD12 TIM4_CH1 TIM4 PWM(5) GPIO(54)
+PD13 TIM4_CH2 TIM4 PWM(6) GPIO(55)
+PD14 TIM4_CH3 TIM4 PWM(7) GPIO(56)
+PD15 TIM4_CH4 TIM4 PWM(8) GPIO(57)
+
+# extra PWM channels -- CUAV-X7 wires these same TIM1/TIM12 channels for PWM9-14.
+# TARA-X7's netlist confirms the same timer channels are wired here too (as
+# FMU_CAP1,2,3,5,6 + FMU_SPARE_4), except channel 11 lands on PJ9 rather than
+# CUAV-X7's PA10 (PA10 is unconnected/NC on this board) -- same TIM1_CH3 function.
+PE9  TIM1_CH1  TIM1  PWM(9)  GPIO(58)
+PE11 TIM1_CH2  TIM1  PWM(10) GPIO(59)
+PJ9  TIM1_CH3  TIM1  PWM(11) GPIO(60)
+PE14 TIM1_CH4  TIM1  PWM(12) GPIO(61)
+PH6  TIM12_CH1 TIM12 PWM(13) GPIO(62) NODMA
+PH9  TIM12_CH2 TIM12 PWM(14) GPIO(63) NODMA
+
+# NOTE: PB0 (ALARM) and PB1 (PPM_IN) are the only two GPIOs wired to a buzzer/RC-input
+# function, but on this MCU both pins' *only* available timer is TIM3 (PB0=TIM3_CH3,
+# PB1=TIM3_CH4) -- confirmed by ./waf build failure "PWMD3 requires TIM3 but the timer is
+# already used" when both were configured (one as PWM tone-alarm, one as input-capture).
+# ChibiOS can't run one timer peripheral as both PWM and ICU at once, so only one of the
+# two hardware functions can be used. RC input capture is kept; ALARM is a plain GPIO
+# (usable for a simple on/off buzzer, not the PWM tone-alarm driver).
+PB0 ALARM OUTPUT LOW GPIO(77)
+
+# RC input (dedicated PPM/input-capture pin; SBUS/DSM primarily via UART8 above)
+PB1 TIM3_CH4 TIM3 RCININT PULLDOWN LOW
+
+# analog in
+PA0 BATT_VOLTAGE_SENS ADC1 SCALE(1)
+PF8 BATT_CURRENT_SENS ADC3 SCALE(1)
+PF9 BATT2_CURRENT_SENS ADC3 SCALE(1)
+
+PC0 SPARE1_ADC1 ADC1 SCALE(1)
+
+PA4 SCALED_V3V3 ADC1 SCALE(1)
+
+PF12 RSSI_IN ADC1 SCALE(1)
+
+# NOTE: BATT2_VOLTAGE_SENS (PA0_C), VDD_5V_SENS (PA1_C) and SPARE2_ADC1 (PC2_C) are wired
+# on the schematic to the STM32H7 "_C" ADC3-direct bonded pads, which chibios_hwdef.py has
+# no support for (no board in-tree uses them). They are omitted here; if needed, would
+# require either rerouting to a normal ADC1/2/3 pin on a future PCB rev, or tooling support.
+
+# CAN bus
+PH14 CAN1_RX CAN1
+PH13 CAN1_TX CAN1
+
+# 2nd CAN bus. Cannot be used at same time as USB_HS
+PB5 CAN2_RX CAN2
+PB6 CAN2_TX CAN2
+
+# control for silent (no output) for CAN
+PH2 GPIO_CAN1_SILENT OUTPUT PUSHPULL SPEED_LOW LOW GPIO(70)
+PH3 GPIO_CAN2_SILENT OUTPUT PUSHPULL SPEED_LOW LOW GPIO(71)
+
+# GPIOs
+
+PA3 HEATER_EN OUTPUT LOW GPIO(80)
+define HAL_HEATER_GPIO_PIN 80
+define HAL_HAVE_IMU_HEATER 1
+
+PG1  VDD_BRICK_nVALID INPUT PULLUP # VALID1, considered primary power
+PG2  VDD_BRICK2_nVALID INPUT PULLUP # VALID2
+PG0  VBUS_nVALID INPUT PULLUP # VALID3
+PJ4  VDD_5V_HIPOWER_nOC INPUT PULLUP
+PJ3  VDD_5V_PERIPH_nOC INPUT PULLUP
+
+# IMU board reset (ADIS16470)
+PJ12 IMU_NRST OUTPUT HIGH GPIO(90)
+
+# board hardware version/revision sense pins (resistor-encoded ID, per schematic)
+PC2 HW_VER_SENSE INPUT GPIO(85)
+PC3 HW_REV_SENSE INPUT GPIO(86)
+PG3 VER_DRIVE OUTPUT LOW GPIO(87)
+PJ5 REV_DRIVE OUTPUT LOW GPIO(88)
+
+# SPI devices
+SPIDEV adis16470 SPI1 DEVID2 ADIS16470_CS MODE3  1*MHZ  2*MHZ
+SPIDEV icm42688  SPI1 DEVID3 ICM42688_CS  MODE3  2*MHZ  8*MHZ
+SPIDEV bmi088_a  SPI4 DEVID2 BMI088_A_CS  MODE3 10*MHZ 10*MHZ
+SPIDEV bmi088_g  SPI4 DEVID3 BMI088_G_CS  MODE3 10*MHZ 10*MHZ
+SPIDEV ms5611    SPI4 DEVID1 MS5611_CS    MODE3 20*MHZ 20*MHZ
+SPIDEV ramtron   SPI2 DEVID1 FRAM_CS      MODE3  8*MHZ  8*MHZ
+
+# TEMP bring-up: sensors brought up one at a time to isolate issues.
+# NOTE: disabling ALL 3 IMUs at once made the board drop off USB entirely
+# (crash-loops before USB comes up) -- unlike a missing baro, which is
+# tolerated as a Config Error with MAVLink still alive.
+BARO MS5611 SPI:ms5611
+
+# three IMUs
+IMU ADIS1647x    SPI:adis16470 ROTATION_NONE ADIS_DRDY_PIN
+IMU Invensensev3 SPI:icm42688  ROTATION_NONE
+IMU BMI088 SPI:bmi088_a SPI:bmi088_g ROTATION_NONE
+
+define HAL_DEFAULT_INS_FAST_SAMPLE 5
+
+# NOTE: rotations set to ROTATION_NONE as a starting point -- verify against the physical
+# IMU-board mounting orientation on the assembled Tara-X7 and adjust before flight.
+
+# compass: BMM350 is populated on the IMU board (I2C4), but this ArduPilot checkout
+# (firmware_V-4.5.7 branch) has no AP_Compass_BMM350 driver -- DRIVER_BMM350 doesn't exist
+# in AP_Compass.h's DriverType enum here (only up to DRIVER_QMC5883P). Confirmed by a failed
+# build: "'DRIVER_BMM350' was not declared in this scope". Newer ArduPilot (master/4.6+) may
+# have added BMM350 support -- check there if onboard compass is needed without a firmware
+# port, otherwise this needs an AP_Compass_BMM350 backend added to this branch.
+#COMPASS BMM350 I2C:4:0x14 true ROTATION_NONE
+
+# microSD support
+PC8 SDMMC1_D0 SDMMC1
+PC9 SDMMC1_D1 SDMMC1
+PC10 SDMMC1_D2 SDMMC1
+PC11 SDMMC1_D3 SDMMC1
+PC12 SDMMC1_CK SDMMC1
+PD2 SDMMC1_CMD SDMMC1
+PB2 SD_CARD_DETECT INPUT
+
+define HAL_OS_FATFS_IO 1                                
+
+# status LEDs -- separate RGB LED board via connector (individually resistor-limited,
+# not the CUAV-X7 opendrain-multiplexed style). Driven as simple digital on/off for the
+# initial bring-up; true PWM colour mixing can be added later via TIM8 channels if needed.
+PI5 LED_RED OUTPUT LOW GPIO(0)
+PI6 LED_GREEN OUTPUT LOW GPIO(1)
+PI7 LED_BLUE OUTPUT LOW GPIO(2)
+
+define HAL_GPIO_LED_ON  1
+
+define BOOTLOADER_DEBUG_PRINTS 1
+define AP_NOTIFY_GPIO_LED_RGB_RED_PIN 0
+define AP_NOTIFY_GPIO_LED_RGB_GREEN_PIN 1
+define AP_NOTIFY_GPIO_LED_RGB_BLUE_PIN 2
+define AP_NOTIFY_GPIO_LED_RGB_ENABLED 1
+
+# enable RAMTRON parameter storage
+# CY15B128Q populated on this board is 128Kbit (16KB), smaller than the FRAM on
+# CUAV-X7 this value was inherited from -- capped to match actual chip capacity.
+define HAL_STORAGE_SIZE 16384
+define HAL_WITH_RAMTRON 1
+
+# TEMP bring-up: CY15B128Q isn't recognized by AP_RAMTRON's JEDEC ID table yet,
+# so fall back to internal flash storage instead of panicking on boot.
+# Remove HAL_RAMTRON_ALLOW_FALLBACK/STORAGE_FLASH_PAGE once FRAM is fixed.
+define HAL_RAMTRON_ALLOW_FALLBACK 1
+STORAGE_FLASH_PAGE 14
+
+# safety switch
+define HAL_HAVE_SAFETY_SWITCH 1
+PE12 LED_SAFETY OUTPUT
+PE10 SAFETY_IN INPUT PULLDOWN
+
+DMA_PRIORITY  ADC* SPI1* TIM*UP*
+DMA_NOSHARE  SPI1* TIM*UP*
+
+# default to 45C target temp
+define HAL_IMU_TEMP_DEFAULT 45
+
+# TEMP bring-up: embed an I2C bus scanner script (no SD card needed) to check
+# I2C1/I2C2/I2C3/I2C4 for responding devices. Remove once bring-up is done.
+ROMFS scripts/i2c_scan_all.lua libraries/AP_HAL_ChibiOS/hwdef/CUAV-X7-Test2/scripts/i2c_scan_all.lua

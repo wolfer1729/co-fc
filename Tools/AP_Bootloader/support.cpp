@@ -20,7 +20,7 @@
 #include "mcu_l4.h"
 
 // optional uprintf() code for debug
-// #define BOOTLOADER_DEBUG SD1
+// #define BOOTLOADER_DEBUG SDU1
 
 #ifndef AP_BOOTLOADER_ALWAYS_ERASE
 #define AP_BOOTLOADER_ALWAYS_ERASE 0
@@ -292,6 +292,20 @@ void led_on(unsigned led)
 #ifdef HAL_GPIO_PIN_LED_BOOTLOADER
     if (led == LED_BOOTLOADER) {
         palWriteLine(HAL_GPIO_PIN_LED_BOOTLOADER, HAL_LED_ON);
+#ifdef HAL_BOOTLOADER_USE_ALL_LEDS
+#ifdef HAL_GPIO_PIN_LED_ACTIVITY
+        palWriteLine(HAL_GPIO_PIN_LED_ACTIVITY, HAL_LED_ON);
+#endif
+#ifdef HAL_GPIO_PIN_LED_ACTIVITY2
+        palWriteLine(HAL_GPIO_PIN_LED_ACTIVITY2, HAL_LED_ON);
+#endif
+#ifdef HAL_GPIO_PIN_LED_ACTIVITY3
+        palWriteLine(HAL_GPIO_PIN_LED_ACTIVITY3, HAL_LED_ON);
+#endif
+#ifdef HAL_GPIO_PIN_LED_RED
+        palWriteLine(HAL_GPIO_PIN_LED_RED, HAL_LED_ON);
+#endif
+#endif
     }
 #endif
 #ifdef HAL_GPIO_PIN_LED_ACTIVITY
@@ -306,6 +320,20 @@ void led_off(unsigned led)
 #ifdef HAL_GPIO_PIN_LED_BOOTLOADER
     if (led == LED_BOOTLOADER) {
         palWriteLine(HAL_GPIO_PIN_LED_BOOTLOADER, !HAL_LED_ON);
+#ifdef HAL_BOOTLOADER_USE_ALL_LEDS
+#ifdef HAL_GPIO_PIN_LED_ACTIVITY
+        palWriteLine(HAL_GPIO_PIN_LED_ACTIVITY, !HAL_LED_ON);
+#endif
+#ifdef HAL_GPIO_PIN_LED_ACTIVITY2
+        palWriteLine(HAL_GPIO_PIN_LED_ACTIVITY2, !HAL_LED_ON);
+#endif
+#ifdef HAL_GPIO_PIN_LED_ACTIVITY3
+        palWriteLine(HAL_GPIO_PIN_LED_ACTIVITY3, !HAL_LED_ON);
+#endif
+#ifdef HAL_GPIO_PIN_LED_RED
+        palWriteLine(HAL_GPIO_PIN_LED_RED, !HAL_LED_ON);
+#endif
+#endif
     }
 #endif
 #ifdef HAL_GPIO_PIN_LED_ACTIVITY
@@ -320,6 +348,20 @@ void led_toggle(unsigned led)
 #ifdef HAL_GPIO_PIN_LED_BOOTLOADER
     if (led == LED_BOOTLOADER) {
         palToggleLine(HAL_GPIO_PIN_LED_BOOTLOADER);
+#ifdef HAL_BOOTLOADER_USE_ALL_LEDS
+#ifdef HAL_GPIO_PIN_LED_ACTIVITY
+        palToggleLine(HAL_GPIO_PIN_LED_ACTIVITY);
+#endif
+#ifdef HAL_GPIO_PIN_LED_ACTIVITY2
+        palToggleLine(HAL_GPIO_PIN_LED_ACTIVITY2);
+#endif
+#ifdef HAL_GPIO_PIN_LED_ACTIVITY3
+        palToggleLine(HAL_GPIO_PIN_LED_ACTIVITY3);
+#endif
+#ifdef HAL_GPIO_PIN_LED_RED
+        palToggleLine(HAL_GPIO_PIN_LED_RED);
+#endif
+#endif
     }
 #endif
 #ifdef HAL_GPIO_PIN_LED_ACTIVITY
@@ -339,12 +381,12 @@ void uprintf(const char *fmt, ...)
 #ifdef BOOTLOADER_DEBUG
     va_list ap;
     static bool initialised;
-    static SerialConfig debug_sercfg;
+    // static SerialConfig debug_sercfg;
     char umsg[200];
     if (!initialised) {
         initialised = true;
-        debug_sercfg.speed = 57600;
-        sdStart(&BOOTLOADER_DEBUG, &debug_sercfg);
+        // debug_sercfg.speed = 57600;
+        // sdStart(&BOOTLOADER_DEBUG, &debug_sercfg);
     }
     va_start(ap, fmt);
     uint32_t n = vsnprintf(umsg, sizeof(umsg), fmt, ap);
@@ -355,6 +397,41 @@ void uprintf(const char *fmt, ...)
     chnWriteTimeout(&BOOTLOADER_DEBUG, (const uint8_t *)umsg, n, chTimeMS2I(100));
 #endif
 }
+
+void usb_printf(const char *fmt, ...)
+{
+#if HAL_USE_SERIAL_USB == TRUE
+    va_list ap;
+    char umsg[200];
+    va_start(ap, fmt);
+    uint32_t n = vsnprintf(umsg, sizeof(umsg), fmt, ap);
+    va_end(ap);
+    if (n > sizeof(umsg)) {
+        n = sizeof(umsg);
+    }
+    chnWriteTimeout(&SDU1, (const uint8_t *)umsg, n, chTimeMS2I(100));
+#else
+    (void)fmt;
+#endif
+}
+
+#if defined(BOOTLOADER_DEV_LIST) && defined(BOOTLOADER_DEBUG_PRINTS)
+// print to every configured bootloader port (USB and all UARTs) at once
+void debug_printf_all(const char *fmt, ...)
+{
+    va_list ap;
+    char umsg[200];
+    va_start(ap, fmt);
+    uint32_t n = vsnprintf(umsg, sizeof(umsg), fmt, ap);
+    va_end(ap);
+    if (n > sizeof(umsg)) {
+        n = sizeof(umsg);
+    }
+    for (uint8_t i=0; i<ARRAY_SIZE(uarts); i++) {
+        chnWriteTimeout(uarts[i], (const uint8_t *)umsg, n, chTimeMS2I(100));
+    }
+}
+#endif
 
 void thread_sleep_ms(uint32_t ms)
 {
@@ -555,21 +632,6 @@ void port_setbaud(uint32_t baudrate)
 #define ECC_CHECK_CHUNK_SIZE (32*sizeof(uint32_t))
 
 #define ECC_CHECK_DEBUG 0
-
-#if ECC_CHECK_DEBUG
-static void usb_printf(const char *fmt, ...)
-{
-    va_list ap;
-    char umsg[200];
-    va_start(ap, fmt);
-    uint32_t n = vsnprintf(umsg, sizeof(umsg), fmt, ap);
-    va_end(ap);
-    if (n > sizeof(umsg)) {
-        n = sizeof(umsg);
-    }
-    chnWriteTimeout(&SDU1, (const uint8_t *)umsg, n, chTimeMS2I(100));
-}
-#endif // ECC_CHECK_DEBUG
 
 /*
   check a flash region for ECC errors, starting at start_page and

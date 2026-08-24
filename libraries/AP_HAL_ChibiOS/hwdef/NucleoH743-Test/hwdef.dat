@@ -1,0 +1,3 @@
+# NucleoH743-Test - test/debug build of NucleoH743, used for bootloader UART testing
+
+include ../NucleoH743/hwdef.dat

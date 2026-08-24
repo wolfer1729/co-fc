@@ -1,0 +1,78 @@
+# hw definition file for processing by chibios_hwdef.py
+# CubeRed project bootloader using the NucleoH743 hardware layout
+
+# MCU class and specific type
+MCU STM32H7xx STM32H743xx
+
+# USB setup
+USB_VENDOR 0x2DAE
+USB_PRODUCT 0x1016
+USB_STRING_MANUFACTURER "Tarauav"
+USB_STRING_PRODUCT "CubeRed"
+
+# crystal frequency
+OSCILLATOR_HZ 8000000
+
+define STM32_HSE_BYPASS
+
+# board ID. See Tools/AP_Bootloader/board_types.txt
+APJ_BOARD_ID 149
+
+# the nucleo seems to have trouble with flashing the last sector?
+FLASH_SIZE_KB 1920
+
+# bootloader is installed at zero offset
+FLASH_RESERVE_START_KB 0
+
+# the location where the bootloader will put the firmware
+FLASH_BOOTLOADER_LOAD_KB 128
+
+SERIAL_ORDER OTG1
+
+PF6 UART7_RX UART7 NODMA
+PE8 UART7_TX UART7 NODMA
+
+PB0 LED_BOOTLOADER OUTPUT LOW
+PE1 LED_ACTIVITY OUTPUT LOW
+PB14 LED_RED OUTPUT LOW
+
+define HAL_BOOTLOADER_USE_ALL_LEDS 1
+define HAL_OS_FATFS_IO 1
+define AP_BOOTLOADER_LOG_TO_SD 1
+undef AP_SIGNED_FIRMWARE
+define AP_SIGNED_FIRMWARE 1
+
+define HAL_LED_ON 0
+define AP_CHECK_FIRMWARE_ENABLED 1
+
+define HAL_BOOTLOADER_REQUIRE_SIGNED_FIRMWARE 1
+
+# Fill this after building the approved signed firmware
+define HAL_BOOTLOADER_FIXED_APP_SHA256 { 0x2A, 0xC5, 0x8B, 0xED, 0xC9, 0x0C, 0x71, 0x0B, 0xB6, 0xBB, 0x3A, 0x1C, 0x74, 0x15, 0x85, 0x34, 0x3A, 0x26, 0x37, 0xB0, 0x40, 0xC9, 0xEA, 0x4C, 0x86, 0x07, 0x2B, 0xC8, 0x5D, 0x58, 0x76, 0x9A }
+
+define STM32_SERIAL_USE_USART7 TRUE
+define HAL_USE_SERIAL TRUE
+
+PA11 OTG_FS_DM OTG1
+PA12 OTG_FS_DP OTG1
+
+PA13 JTMS-SWDIO SWD
+PA14 JTCK-SWCLK SWD
+
+# Add CS pins to ensure they are high in bootloader
+PA4 MPU_CS CS
+PC7 BARO_CS CS
+
+# microSD support (SDMMC1)
+include sdcard.inc
+define FATFS_HAL_DEVICE SDCD1
+# enable FAT filesystem support (needs a microSD defined via SDMMC)
+define HAL_OS_FATFS_IO 1
+# minimal ChibiOS heap settings for FATFS
+define CH_CFG_USE_MEMCORE 1
+define CH_CFG_USE_HEAP 1
+define CH_CFG_USE_SEMAPHORES 0
+define CH_CFG_USE_MUTEXES 1
+define CH_CFG_USE_DYNAMIC 1
+define CH_CFG_USE_WAITEXIT 1
+define CH_CFG_USE_REGISTRY 1

@@ -24,6 +24,7 @@
 #include "support.h"
 #include <dronecan_msgs.h>
 #include "can.h"
+#include "bootloader_firmware_check.h"
 #include "bl_protocol.h"
 #include <drivers/stm32/canard_stm32.h>
 #include "app_comms.h"
@@ -336,7 +337,7 @@ static void handle_file_read_response(CanardInstance* ins, CanardRxTransfer* tra
             fw_update.node_id = 0;
             flash_write_flush();
             flash_set_keep_unlocked(false);
-            const auto ok = check_good_firmware();
+            const auto ok = bootloader_check_firmware();
             node_status.vendor_specific_status_code = uint8_t(ok);
             if (ok == check_fw_result_t::CHECK_FW_OK) {
                 jump_to_app();
@@ -805,7 +806,7 @@ bool can_check_update(void)
 
 void can_start()
 {
-    node_status.vendor_specific_status_code = uint8_t(check_good_firmware());
+    node_status.vendor_specific_status_code = uint8_t(bootloader_check_firmware());
     node_status.mode = UAVCAN_PROTOCOL_NODESTATUS_MODE_MAINTENANCE;
 
 #if HAL_USE_CAN

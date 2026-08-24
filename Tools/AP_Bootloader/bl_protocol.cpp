@@ -47,6 +47,7 @@
 #include "hwdef.h"
 
 #include "bl_protocol.h"
+#include "bootloader_firmware_check.h"
 #include "support.h"
 #include "can.h"
 #include <AP_HAL_ChibiOS/hwdef/common/watchdog.h>
@@ -250,7 +251,7 @@ jump_to_app()
     const uint32_t *app_base = (const uint32_t *)(APP_START_ADDRESS);
 
 #if AP_CHECK_FIRMWARE_ENABLED
-    const auto ok = check_good_firmware();
+    const auto ok = bootloader_check_firmware();
     if (ok != check_fw_result_t::CHECK_FW_OK) {
         // bad firmware, don't try and boot
         led_set(LED_BAD_FW);
@@ -517,6 +518,19 @@ bootloader(unsigned timeout)
             ) {
                 return;
             }
+
+#ifdef BOOTLOADER_DEBUG_PRINTS
+            {
+                static uint32_t last_debug_print_ms;
+                static uint32_t debug_counter;
+                const uint32_t now = AP_HAL::millis();
+                if (now - last_debug_print_ms >= 1000U) {
+                    last_debug_print_ms = now;
+                    debug_counter++;
+                    debug_printf_all("hello %lu\n", (unsigned long)debug_counter);
+                }
+            }
+#endif
 
             /* try to get a byte from the host */
             c = cin(0);

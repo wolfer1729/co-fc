@@ -31,6 +31,7 @@
 #include "support.h"
 #include "bl_protocol.h"
 #include "flash_from_sd.h"
+#include "bootloader_firmware_check.h"
 #include "can.h"
 #include <stdio.h>
 #if EXT_FLASH_SIZE_MB
@@ -127,7 +128,11 @@ int main(void)
         timeout = 0;
     }
 #if AP_CHECK_FIRMWARE_ENABLED
-    const auto ok = check_good_firmware();
+    const auto ok = bootloader_check_firmware();
+    bootloader_check_indicate_leds(ok);
+#ifdef AP_BOOTLOADER_LOG_TO_SD
+    bootloader_log_fw_result(ok, ok == check_fw_result_t::CHECK_FW_OK);
+#endif
     if (ok != check_fw_result_t::CHECK_FW_OK) {
         // bad firmware CRC, don't try and boot
         timeout = 0;
@@ -164,7 +169,11 @@ int main(void)
         timeout = 0;
     }
 #elif AP_CHECK_FIRMWARE_ENABLED
-    const auto ok = check_good_firmware();
+    const auto ok = bootloader_check_firmware();
+    bootloader_check_indicate_leds(ok);
+#ifdef AP_BOOTLOADER_LOG_TO_SD
+    bootloader_log_fw_result(ok, ok == check_fw_result_t::CHECK_FW_OK);
+#endif
     if (ok != check_fw_result_t::CHECK_FW_OK) {
         // bad firmware, don't try and boot
         timeout = 0;
@@ -209,6 +218,7 @@ int main(void)
 
 #if defined(BOOTLOADER_DEV_LIST)
     init_uarts();
+    bootloader_check_report_usb();
 #endif
 #if HAL_USE_CAN == TRUE || HAL_NUM_CAN_IFACES
     can_start();
@@ -231,9 +241,16 @@ int main(void)
     }
 #else
     // CAN and network only
+    // Blink the bootloader LED while we wait for a firmware upload.
+    uint32_t last_led_toggle_ms = AP_HAL::millis();
     while (true) {
         uint32_t t0 = AP_HAL::millis();
         while (timeout == 0 || AP_HAL::millis() - t0 <= timeout) {
+            const uint32_t now = AP_HAL::millis();
+            if (now - last_led_toggle_ms >= 250U) {
+                last_led_toggle_ms = now;
+                led_toggle(LED_BOOTLOADER);
+            }
             can_update();
             chThdSleep(chTimeMS2I(1));
         }
@@ -241,5 +258,3 @@ int main(void)
     }
 #endif
 }
-
-

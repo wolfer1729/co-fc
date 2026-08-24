@@ -30,10 +30,25 @@ SERIAL_ORDER OTG1
 PF6 UART7_RX UART7 NODMA
 PE8 UART7_TX UART7 NODMA
 
-#PB0 LED_BOOTLOADER OUTPUT
-#PB7 LED_ACTIVITY OUTPUT
+PB0 LED_BOOTLOADER OUTPUT LOW
+PE1 LED_ACTIVITY OUTPUT LOW
+PB14 LED_RED OUTPUT LOW
 
-#define HAL_LED_ON 0
+define HAL_BOOTLOADER_USE_ALL_LEDS 1
+
+define HAL_LED_ON 0
+define AP_CHECK_FIRMWARE_ENABLED 1
+
+# To lock boot to your signed firmware only, build a secure bootloader
+# with your public key and enable:
+# define HAL_BOOTLOADER_REQUIRE_SIGNED_FIRMWARE 1
+#
+# To lock boot to one exact firmware image as well, set the approved
+# application SHA-256 here as 32 bytes:
+# define HAL_BOOTLOADER_FIXED_APP_SHA256 { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, \
+#                                          0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, \
+#                                          0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, \
+#                                          0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F }
 
 define STM32_SERIAL_USE_USART7 TRUE
 define HAL_USE_SERIAL TRUE

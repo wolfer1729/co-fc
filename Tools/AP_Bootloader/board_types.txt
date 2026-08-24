@@ -103,6 +103,8 @@ AP_HW_OMNIBUSF4V6                     137
 AP_HW_HELIOSPRING                     138
 AP_HW_DURANDAL                        139
 AP_HW_CUBEORANGE                      140
+AP_HW_CUBEBLUE                        1729
+AP_HW_CUBERED                         149
 AP_HW_MRO_CONTROL_ZERO                141
 AP_HW_MRO_CONTROL_ZERO_OEM            142
 AP_HW_MATEKF765_WING                  143
@@ -473,6 +475,9 @@ AP_HW_DroneerF405                    5800
 #IDs 5810-5819 reserved for Brother Hobby
 AP_HW_BrotherHobbyH743               5810
 AP_HW_BrotherHobbyF405v3             5811
+
+# private/local dev board, not registered upstream
+AP_HW_DSHARK_FC                      5820
 
 # IDs 6000-6099 reserved for SpektreWorks
 AP_HW_sw-spar-f407                   6000

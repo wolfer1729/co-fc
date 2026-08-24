@@ -28,6 +28,7 @@ enum class check_fw_result_t : uint8_t {
     FAIL_REASON_BAD_LENGTH_DESCRIPTOR = 16,
     FAIL_REASON_BAD_FIRMWARE_SIGNATURE = 17,
     FAIL_REASON_VERIFICATION = 18,
+    FAIL_REASON_BAD_SHA256 = 19,
 };
 
 #ifndef FW_MAJOR
@@ -65,6 +66,8 @@ struct app_descriptor_unsigned {
     // total size of firmware image in bytes
     uint32_t image_size;
     uint32_t git_hash;
+    // sha256 of the firmware image, excluding the mutable descriptor body
+    uint8_t image_sha256[32];
 
     // software version number
     uint8_t  version_major;
@@ -88,6 +91,8 @@ struct app_descriptor_signed {
     // firmware signature
     uint32_t signature_length;
     uint8_t signature[72];
+    // sha256 of the firmware image, excluding the mutable descriptor body
+    uint8_t image_sha256[32];
 
     // software version number
     uint8_t  version_major;
@@ -104,7 +109,7 @@ typedef struct app_descriptor_signed app_descriptor_t;
 typedef struct app_descriptor_unsigned app_descriptor_t;
 #endif
 
-#define APP_DESCRIPTOR_UNSIGNED_TOTAL_LENGTH 36
+#define APP_DESCRIPTOR_UNSIGNED_TOTAL_LENGTH 68
 #define APP_DESCRIPTOR_SIGNED_TOTAL_LENGTH (APP_DESCRIPTOR_UNSIGNED_TOTAL_LENGTH+72+4)
 
 static_assert(sizeof(app_descriptor_unsigned) == APP_DESCRIPTOR_UNSIGNED_TOTAL_LENGTH, "app_descriptor_unsigned incorrect length");
